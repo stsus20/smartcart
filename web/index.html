@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartWatch - Lista de compras</title>
+  <style>
+    /* RESET */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #d6dce2;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    /* ---- SIMULACIÓN DE SMARTWATCH CON CORREAS REALISTAS ---- */
+    .watch-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.25));
+    }
+
+    /* --- CORREA SUPERIOR (más larga y con textura) --- */
+    .strap-top {
+      width: 52px;
+      height: 120px;
+      background: #5a3e2b; /* cuero oscuro */
+      border-radius: 30px 30px 12px 12px;
+      margin-bottom: -8px;
+      position: relative;
+      /* Efecto de textura de cuero mediante degradados */
+      background-image: 
+        repeating-linear-gradient(45deg, 
+          rgba(255, 255, 255, 0.05) 0px, 
+          rgba(255, 255, 255, 0.05) 2px,
+          rgba(0, 0, 0, 0.05) 2px,
+          rgba(0, 0, 0, 0.05) 4px),
+        radial-gradient(ellipse at 30% 40%, #6b4c34 0%, #4a3222 100%);
+      box-shadow: 
+        inset -4px -6px 12px rgba(0,0,0,0.5),
+        inset 4px 4px 10px rgba(255,255,255,0.15);
+      border: 1px solid #3d2a1b;
+    }
+
+    /* Costuras en la correa superior */
+    .strap-top::before {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 8px;
+      right: 8px;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, 
+        #c9a87c 0px, #c9a87c 4px, 
+        transparent 4px, transparent 8px);
+      opacity: 0.5;
+      border-radius: 2px;
+      box-shadow: 0 20px 0 #c9a87c, 0 40px 0 #c9a87c, 0 60px 0 #c9a87c, 0 80px 0 #c9a87c;
+      opacity: 0.4;
+    }
+
+    /* Textura adicional (líneas verticales) */
+    .strap-top::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 18px;
+      background: repeating-linear-gradient(180deg, 
+        rgba(0,0,0,0.08) 0px, 
+        rgba(0,0,0,0.08) 2px,
+        transparent 2px, 
+        transparent 6px);
+      border-radius: 10px;
+    }
+
+    /* --- CAJA DEL RELOJ --- */
+    .watch-case {
+      width: 300px;
+      height: 340px;
+      background: linear-gradient(145deg, #d4c9c0, #b8ada2);
+      border-radius: 48px;
+      padding: 12px;
+      box-shadow: 
+        0 12px 30px rgba(0,0,0,0.3),
+        inset 0 -2px 6px rgba(0,0,0,0.25),
+        inset 0 2px 8px rgba(255,255,255,0.6);
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Bisel interno (brillo) */
+    .watch-case::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      bottom: 8px;
+      border-radius: 40px;
+      background: transparent;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* --- PANTALLA --- */
+    .watch-screen {
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      border-radius: 36px;
+      overflow: hidden;
+      box-shadow: 
+        inset 0 4px 20px rgba(0,0,0,0.06),
+        0 0 0 1px rgba(255,255,255,0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+
+    .watch-content {
+      flex: 1;
+      padding: 16px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      background: #f8fafc;
+      position: relative;
+    }
+
+    /* Reflejo superior en el cristal */
+    .watch-screen::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 40%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, transparent 100%);
+      border-radius: 36px 36px 0 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* --- RELOJ --- */
+    .reloj {
+      font-size: 30px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 2px;
+      color: #1e293b;
+      text-align: center;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.5);
+      padding: 4px 0;
+      border-radius: 30px;
+      backdrop-filter: blur(2px);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    /* --- LISTA (scroll) --- */
+    #listaContainer {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+      margin-bottom: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+    #listaContainer::-webkit-scrollbar {
+      width: 4px;
+    }
+    #listaContainer::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 20px;
+    }
+    #listaContainer::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    /* Items de producto */
+    .product-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 10px;
+      background: #ffffff;
+      border-radius: 14px;
+      margin-bottom: 4px;
+      border: 1px solid #e9edf2;
+      transition: 0.15s;
+      font-size: 13px;
+    }
+    .product-item .estado {
+      font-size: 16px;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .product-item .info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .product-item .nombre {
+      font-weight: 500;
+      color: #0f172a;
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .product-item .meta {
+      font-size: 11px;
+      color: #64748b;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 1px;
+    }
+    .product-item .badge {
+      padding: 0 10px;
+      border-radius: 30px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #fff;
+      text-transform: capitalize;
+      line-height: 18px;
+      flex-shrink: 0;
+    }
+    .product-item.comprado {
+      opacity: 0.5;
+      background: #f1f5f9;
+    }
+    .product-item.comprado .nombre {
+      text-decoration: line-through;
+      color: #94a3b8;
+    }
+    .empty {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 14px;
+      padding: 30px 0;
+    }
+
+    /* --- BOTÓN FINALIZAR --- */
+    .btn-finalizar {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 10px 0;
+      border-radius: 60px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+      flex-shrink: 0;
+      width: 100%;
+      text-align: center;
+      margin-top: 2px;
+    }
+    .btn-finalizar:hover {
+      background: #1d4ed8;
+      transform: scale(1.02);
+    }
+    .btn-finalizar:active {
+      transform: scale(0.96);
+    }
+
+    /* --- ESTADO DE PANTALLA EN BLANCO (solo botón) --- */
+    .watch-content.blank {
+      justify-content: center;
+      align-items: center;
+      background: #ffffff;
+    }
+    .watch-content.blank .btn-finalizar {
+      width: auto;
+      padding: 14px 40px;
+      font-size: 20px;
+      background: #22c55e;
+      box-shadow: 0 4px 16px rgba(34,197,94,0.3);
+      margin: 0;
+    }
+    .watch-content.blank .btn-finalizar:disabled {
+      opacity: 0.8;
+      transform: none;
+      cursor: default;
+      background: #22c55e;
+    }
+    .hidden {
+      display: none !important;
+    }
+
+    /* --- CORREA INFERIOR (más larga, con hebilla y textura) --- */
+    .strap-bottom {
+      width: 52px;
+      height: 120px;
+      background: #5a3e2b;
+      border-radius: 12px 12px 30px 30px;
+      margin-top: -8px;
+      position: relative;
+      background-image: 
+        repeating-linear-gradient(45deg, 
+          rgba(255, 255, 255, 0.05) 0px, 
+          rgba(255, 255, 255, 0.05) 2px,
+          rgba(0, 0, 0, 0.05) 2px,
+          rgba(0, 0, 0, 0.05) 4px),
+        radial-gradient(ellipse at 30% 40%, #6b4c34 0%, #4a3222 100%);
+      box-shadow: 
+        inset -4px 6px 12px rgba(0,0,0,0.5),
+        inset 4px -4px 10px rgba(255,255,255,0.15);
+      border: 1px solid #3d2a1b;
+    }
+
+    /* Costuras en la correa inferior */
+    .strap-bottom::before {
+      content: '';
+      position: absolute;
+      bottom: 16px;
+      left: 8px;
+      right: 8px;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, 
+        #c9a87c 0px, #c9a87c 4px, 
+        transparent 4px, transparent 8px);
+      opacity: 0.4;
+      border-radius: 2px;
+      box-shadow: 0 -20px 0 #c9a87c, 0 -40px 0 #c9a87c, 0 -60px 0 #c9a87c, 0 -80px 0 #c9a87c;
+      opacity: 0.4;
+    }
+
+    /* Textura vertical */
+    .strap-bottom::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 18px;
+      background: repeating-linear-gradient(180deg, 
+        rgba(0,0,0,0.08) 0px, 
+        rgba(0,0,0,0.08) 2px,
+        transparent 2px, 
+        transparent 6px);
+      border-radius: 10px;
+    }
+
+    /* Hebilla metálica simulada en la correa inferior */
+    .strap-bottom .buckle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 28px;
+      height: 18px;
+      background: linear-gradient(145deg, #c0b0a0, #a09080);
+      border-radius: 4px;
+      box-shadow: 
+        inset 0 2px 4px rgba(255,255,255,0.4),
+        inset 0 -2px 4px rgba(0,0,0,0.3),
+        0 2px 6px rgba(0,0,0,0.2);
+      border: 1px solid #8a7a6a;
+      z-index: 2;
+    }
+    /* Pasador de la hebilla */
+    .strap-bottom .buckle::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 12px;
+      background: #a09080;
+      border-radius: 2px;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.3);
+    }
+
+    /* Ajuste para el contenedor principal */
+    #mainContent {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      height: 100%;
+    }
+
+    /* Responsive básico */
+    @media (max-width: 400px) {
+      .watch-case {
+        width: 260px;
+        height: 300px;
+        padding: 10px;
+      }
+      .watch-case {
+        border-radius: 40px;
+      }
+      .watch-screen {
+        border-radius: 30px;
+      }
+      .reloj {
+        font-size: 24px;
+      }
+      .strap-top, .strap-bottom {
+        width: 44px;
+        height: 90px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="watch-wrapper">
+  <!-- Correa superior -->
+  <div class="strap-top"></div>
+
+  <!-- Caja del smartwatch -->
+  <div class="watch-case">
+    <div class="watch-screen">
+      <div class="watch-content" id="watchContent">
+        <!-- Contenido principal (reloj + lista) -->
+        <div id="mainContent">
+          <div class="reloj" id="reloj">--:--:--</div>
+          <div id="listaContainer">
+            <!-- Aquí se renderiza la lista -->
+          </div>
+        </div>
+        <!-- Botón finalizar (siempre visible) -->
+        <button class="btn-finalizar" id="btnFinalizar">✅ Finalizar compra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Correa inferior con hebilla -->
+  <div class="strap-bottom">
+    <div class="buckle"></div>
+  </div>
+</div>
+
+<script>
+  // ---- LÓGICA (igual que antes) ----
+  let listaInterval = null;
+  let relojInterval = null;
+  let finalizado = false;
+
+  function actualizarReloj() {
+    const ahora = new Date();
+    const horas = String(ahora.getHours()).padStart(2, '0');
+    const minutos = String(ahora.getMinutes()).padStart(2, '0');
+    const segundos = String(ahora.getSeconds()).padStart(2, '0');
+    document.getElementById('reloj').textContent = `${horas}:${minutos}:${segundos}`;
+  }
+
+  async function cargarLista() {
+    if (finalizado) return;
+    try {
+      const res = await fetch('http://localhost:3000/api/lista');
+      const productos = await res.json();
+      const container = document.getElementById('listaContainer');
+      if (productos.length === 0) {
+        container.innerHTML = `<p class="empty">🛍️ No hay productos</p>`;
+        return;
+      }
+      const grupos = {};
+      productos.forEach(p => {
+        if (!grupos[p.categoria]) grupos[p.categoria] = [];
+        grupos[p.categoria].push(p);
+      });
+
+      const categorias = {
+        carnes: { label: '🥩 Carnes', color: '#dc2626' },
+        lacteos: { label: '🥛 Lácteos', color: '#2563eb' },
+        frutas: { label: '🍎 Frutas', color: '#22c55e' },
+        verduras: { label: '🥦 Verduras', color: '#16a34a' },
+        panaderia: { label: '🍞 Panadería', color: '#f97316' },
+        abarrotes: { label: '🥫 Abarrotes', color: '#9333ea' },
+        limpieza: { label: '🧹 Limpieza', color: '#6b7280' },
+        farmacia: { label: '💊 Farmacia', color: '#ec4899' },
+        mascotas: { label: '🐶 Mascotas', color: '#92400e' },
+        otros: { label: '📦 Otros', color: '#1e293b' }
+      };
+
+      let html = '';
+      Object.keys(grupos).forEach(cat => {
+        const info = categorias[cat] || categorias.otros;
+        html += `<div style="margin-bottom:6px;">`;
+        html += `<div style="font-weight:600;font-size:11px;color:${info.color};margin-bottom:2px;text-transform:uppercase;letter-spacing:0.3px;">${info.label}</div>`;
+        grupos[cat].forEach(p => {
+          const compradoClass = p.comprado ? 'comprado' : '';
+          const estadoIcon = p.comprado ? '✅' : '⬜';
+          html += `
+            <div class="product-item ${compradoClass}">
+              <span class="estado">${estadoIcon}</span>
+              <div class="info">
+                <div class="nombre">${p.nombre}</div>
+                <div class="meta">
+                  <span class="badge" style="background-color:${info.color}">${cat}</span>
+                  <span>×${p.cantidad}</span>
+                  ${p.favorito ? '⭐' : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      });
+      container.innerHTML = html;
+    } catch (error) {
+      console.error(error);
+      document.getElementById('listaContainer').innerHTML = '<p class="empty">❌ Error al cargar</p>';
+    }
+  }
+
+  function finalizarCompra() {
+    if (finalizado) return;
+    finalizado = true;
+
+    if (listaInterval) {
+      clearInterval(listaInterval);
+      listaInterval = null;
+    }
+    if (relojInterval) {
+      clearInterval(relojInterval);
+      relojInterval = null;
+    }
+
+    const mainContent = document.getElementById('mainContent');
+    mainContent.classList.add('hidden');
+
+    const watchContent = document.getElementById('watchContent');
+    watchContent.classList.add('blank');
+
+    const btn = document.getElementById('btnFinalizar');
+    btn.textContent = '🛒 Compra finalizada';
+    btn.disabled = true;
+    btn.style.opacity = '0.9';
+    btn.style.background = '#22c55e';
+  }
+
+  function init() {
+    actualizarReloj();
+    relojInterval = setInterval(actualizarReloj, 1000);
+    cargarLista();
+    listaInterval = setInterval(cargarLista, 2000);
+
+    document.getElementById('btnFinalizar').addEventListener('click', finalizarCompra);
+  }
+
+  init();
+</script>
+
+</body>
+</html>
